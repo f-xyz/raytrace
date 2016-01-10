@@ -8,7 +8,7 @@ define(function(require/*, exports, module*/) {
     document.body.appendChild(stats.domElement);
 
     var size = new gl.Vector2(innerWidth, innerHeight)
-        .divideScalar(isHD() ? 1 : 1);
+        .divideScalar(isHD() ? 1 : 2);
     var config = new gl.Vector3(1000, 0, 0); // iterations / not used / not used
     var isRunning = false;
     var time = 0;
