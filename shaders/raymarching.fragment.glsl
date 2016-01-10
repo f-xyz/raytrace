@@ -12,7 +12,11 @@ uniform vec2 mouse;
 uniform sampler2D tex;
 uniform sampler2D backbuffer;
 
-vec3 vSun = vec3(10.0, -10.0, 10.0);
+struct material {
+    vec4 diffuse;
+    float phong;
+    float reflection;
+};
 
 float plane(vec3 v, float y) { return v.y + y; }
 float sphere(vec3 v, float r) { return length(v) - r; }
@@ -47,16 +51,16 @@ float fnoise(vec2 seed) {
     return 0.5 * noise(seed)
          + 0.25 * noise(seed * 1.97)
 //         + 0.125 * noise(seed * 4.04)
-         + 0.0625 * noise(seed * 8.17)
+//         + 0.0625 * noise(seed * 8.17)
     ;
 }
 
 vec3 world(vec3 voxel) {
     vec3 vTerrain = voxel;
-    vTerrain.y += 40.0*fnoise(voxel.xz/40.0 + 1.1 - time/10.0);
+    vTerrain.y += 20.0*fnoise(voxel.xz/10.0 + 2.1 - time/10.0);
     return join(
-        vec3(sphere(voxel + vSun, 2.0), 1.0, 1.0),
-        vec3(plane(vTerrain, 10.0), 2.0, 1.0)
+        vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),
+        vec3(plane(vTerrain + vec3(0., 0., 20.), 10.0), 2.0, 1.0)
     );
 }
 
@@ -77,8 +81,9 @@ void main() {
     vec3 ro = o + pos.x*x*ratio + pos.y*y; // ray origin
     vec3 rd = normalize(ro - eye); // ray direction
 
-    //
-    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    // sky
+    vec4 skyColor = vec4(0.4, 0.2+pos.y/2.0, 0.2+pos.y, 1.0);
+    gl_FragColor = skyColor;
 
     //
     float depth = 0.0; // eq. ray path length
@@ -89,8 +94,9 @@ void main() {
     vec4 diffuseColor;
     float rayPower = 1.0;
 
-    for (float iReflection = 0.0; iReflection < REFLECTIONS; iReflection++)
+//    for (float iReflection = 0.0; iReflection < REFLECTIONS; iReflection++)
         for (float iStep = 0.0; iStep < MAX_STEPS; ++iStep) {
+
             voxel = ro + depth * rd; // current voxel
             vec3 intersection = world(voxel);
             float d = intersection.x; // distance to the closest surface
@@ -110,32 +116,23 @@ void main() {
                 vec3 light = eye;
                 float phong = max(0.0, dot(normal, normalize(light.xyz - voxel)));
 
-                if (materialId == 1.0) {
-                    diffuseColor = vec4(1.0);
-                } else if (materialId == 2.0) {
-                    diffuseColor = vec4(1.0, 0.8, pow(abs(sin(voxel.y)), 4.0), 1.0);
+                if (materialId == 1.0) { // sun
+                    gl_FragColor = vec4(1.0, 0.6, 0.0, 1.0);
+                } else if (materialId == 2.0) { // ground
+//                    diffuseColor = vec4(0.8, 0.6, 0.1, 1.0);
+                    diffuseColor = vec4(0.8, 0.6, 0.1, 1.0);
+                    float q = depth / MAX_PATH * 2.0;
+                    gl_FragColor = mix(diffuseColor * phong, skyColor, q);
                 }
 
-                vec4 c = rayPower * diffuseColor * phong;
-                if (iReflection == 0.0) {
-                    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-                }
-
-                if (materialId == 2.0) {
-                    float q = depth / MAX_PATH;
-                    gl_FragColor += mix(c, vec4(0, 0, 0, 1), q);
-                } else {
-                    gl_FragColor += c;
-                }
-
-                rayPower = intersection.z;
+//                rayPower = intersection.z;
                 break;
 
             } else if (depth > MAX_PATH) {
-               break;
+                break;
             }
         }
 
-    // fog
-//    gl_FragColor += 0.4*fnoise(pos+sin(0.1*time));
+    //global fog
+    gl_FragColor += 0.4*fnoise(pos+sin(0.1*time));
 }
