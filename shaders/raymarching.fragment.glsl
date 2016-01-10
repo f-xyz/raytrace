@@ -1,7 +1,7 @@
 #define PI              3.14159265
-#define MAX_STEPS       100.0
+#define MAX_STEPS       1000.0
 #define MAX_PATH        1000.0
-#define MIN_PATH_DELTA  1e-3
+#define MIN_PATH_DELTA  1e-4
 #define REFLECTIONS     1.0
 #define NORMAL_DELTA    1e-2
 
@@ -49,7 +49,7 @@ float noise(vec2 seed) {
 float fnoise(vec2 seed) {
     seed += vec2(12.0);
     return 0.5 * noise(seed)
-         + 0.25 * noise(seed * 1.1)
+//         + 0.25 * noise(seed * 1.1)
 //         + 0.125 * noise(seed * 4.)
 //         + 0.0625 * noise(seed * 4.)
 //         + 0.03125 * noise(seed * 5.)
@@ -58,7 +58,7 @@ float fnoise(vec2 seed) {
 
 vec3 world(vec3 voxel) {
     vec3 vTerrain = voxel;
-    vTerrain.y += 100.0*fnoise(voxel.xz/40.0 - time/10.0);
+    vTerrain.y += 100.0*fnoise(voxel.xz/40.0 - time/1.0);
     return /*join(
         vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),*/
         vec3(plane(vTerrain + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
@@ -120,24 +120,27 @@ void main() {
                 rd = normalize(reflect(rd, normal));
                 ro = voxel + 2.0 * MIN_PATH_DELTA * rd; // 2.0 is for magic
 
-                vec3 light = vec3(0.0, 0.0, -1000.0);
+                vec3 light = vec3(0.0, 0.0, 1000.0);
                 float phong = max(0.0, dot(normal, normalize(light.xyz - voxel)));
+
+                if (iReflection == 0.0) gl_FragColor = vec4(0);
 
                 if (materialId == 1.0) { // sun
                     gl_FragColor = vec4(1.0, 0.6, 0.0, 1.0);
                 } else if (materialId == 2.0) { // terrain
 //                    if (abs(voxel.y + 40.0) < 0.5) // debug red line
 //                        diffuseColor = vec4(1, 0, 0, 1);
-                    /*else */if (voxel.y < -40.0) { // water
+                    /*else */if (voxel.y < -20.0) { // water
                         float q = depth / MAX_PATH * 2.0;
                         diffuseColor = vec4(0.3, 0.3, 1, 1);
                         gl_FragColor = mix(diffuseColor, skyColor, q);
 //                        gl_FragColor = diffuseColor;
-                    } else { // slope and peak
-                        float q = clamp(depth/MAX_PATH*5.0, 0., 1.);
-                        diffuseColor = vec4(0.3);
-                        gl_FragColor = mix(diffuseColor*phong, skyColor, q);
                     }
+//                    } else { // slope and peak
+                        float w = clamp(depth/MAX_PATH*5.0, 0., 1.);
+                        diffuseColor = vec4(0.3);
+                        gl_FragColor += mix(diffuseColor*phong, skyColor, w);
+//                    }
 
 //                    gl_FragColor = diffuseColor * phong;
                 }
