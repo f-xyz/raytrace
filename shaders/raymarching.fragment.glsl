@@ -1,7 +1,7 @@
 #define PI              3.14159265
-#define MAX_STEPS       128.0
-#define MAX_PATH        100.0
-#define MIN_PATH_DELTA  1e-2
+#define MAX_STEPS       100.0
+#define MAX_PATH        1000.0
+#define MIN_PATH_DELTA  1e-3
 #define REFLECTIONS     1.0
 #define NORMAL_DELTA    1e-2
 
@@ -12,11 +12,11 @@ uniform vec2 mouse;
 uniform sampler2D tex;
 uniform sampler2D backbuffer;
 
-struct material {
-    vec4 diffuse;
-    float phong;
-    float reflection;
-};
+//struct material {
+//    vec4 diffuse;
+//    float phong;
+//    float reflection;
+//};
 
 float plane(vec3 v, float y) { return v.y + y; }
 float sphere(vec3 v, float r) { return length(v) - r; }
@@ -49,19 +49,20 @@ float noise(vec2 seed) {
 float fnoise(vec2 seed) {
     seed += vec2(12.0);
     return 0.5 * noise(seed)
-         + 0.25 * noise(seed * 1.97)
-//         + 0.125 * noise(seed * 4.04)
-//         + 0.0625 * noise(seed * 8.17)
+         + 0.25 * noise(seed * 1.1)
+//         + 0.125 * noise(seed * 4.)
+//         + 0.0625 * noise(seed * 4.)
+//         + 0.03125 * noise(seed * 5.)
     ;
 }
 
 vec3 world(vec3 voxel) {
     vec3 vTerrain = voxel;
-    vTerrain.y += 20.0*fnoise(voxel.xz/10.0 + 2.1 - time/10.0);
-    return join(
-        vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),
-        vec3(plane(vTerrain + vec3(0., 0., 20.), 10.0), 2.0, 1.0)
-    );
+    vTerrain.y += 100.0*fnoise(voxel.xz/40.0 - time/10.0);
+    return /*join(
+        vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),*/
+        vec3(plane(vTerrain + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
+    /*)*/;
 }
 
 void main() {
@@ -74,6 +75,12 @@ void main() {
     vec3 eye    = vec3(0.0, 4.0, 4.0);
     vec3 lookAt = vec3(0.0, 3.0, 0.0);
 
+    // camera path
+//    float amp = 4.0;
+//    eye.x = amp*cos(time*.3);// + amp*cos(time*speed);
+//    eye.z = amp*sin(time*.1);// - amp*sin(time*speed);
+//    eye.y = 1.*abs(cos(time/100.0));
+
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
     vec3 y = cross(forward, x);
@@ -82,7 +89,7 @@ void main() {
     vec3 rd = normalize(ro - eye); // ray direction
 
     // sky
-    vec4 skyColor = vec4(0.4, 0.2+pos.y/2.0, 0.2+pos.y, 1.0);
+    vec4 skyColor = vec4(0.6, 0.4+pos.y/2.0, 0.2+pos.y, 1.0);
     gl_FragColor = skyColor;
 
     //
@@ -94,7 +101,7 @@ void main() {
     vec4 diffuseColor;
     float rayPower = 1.0;
 
-//    for (float iReflection = 0.0; iReflection < REFLECTIONS; iReflection++)
+    for (float iReflection = 0.0; iReflection < REFLECTIONS; iReflection++)
         for (float iStep = 0.0; iStep < MAX_STEPS; ++iStep) {
 
             voxel = ro + depth * rd; // current voxel
@@ -113,26 +120,37 @@ void main() {
                 rd = normalize(reflect(rd, normal));
                 ro = voxel + 2.0 * MIN_PATH_DELTA * rd; // 2.0 is for magic
 
-                vec3 light = eye;
+                vec3 light = vec3(0.0, 0.0, -1000.0);
                 float phong = max(0.0, dot(normal, normalize(light.xyz - voxel)));
 
                 if (materialId == 1.0) { // sun
                     gl_FragColor = vec4(1.0, 0.6, 0.0, 1.0);
-                } else if (materialId == 2.0) { // ground
-//                    diffuseColor = vec4(0.8, 0.6, 0.1, 1.0);
-                    diffuseColor = vec4(0.8, 0.6, 0.1, 1.0);
-                    float q = depth / MAX_PATH * 2.0;
-                    gl_FragColor = mix(diffuseColor * phong, skyColor, q);
+                } else if (materialId == 2.0) { // terrain
+//                    if (abs(voxel.y + 40.0) < 0.5) // debug red line
+//                        diffuseColor = vec4(1, 0, 0, 1);
+                    /*else */if (voxel.y < -40.0) { // water
+                        float q = depth / MAX_PATH * 2.0;
+                        diffuseColor = vec4(0.3, 0.3, 1, 1);
+                        gl_FragColor = mix(diffuseColor, skyColor, q);
+//                        gl_FragColor = diffuseColor;
+                    } else { // slope and peak
+                        float q = clamp(depth/MAX_PATH*5.0, 0., 1.);
+                        diffuseColor = vec4(0.3);
+                        gl_FragColor = mix(diffuseColor*phong, skyColor, q);
+                    }
+
+//                    gl_FragColor = diffuseColor * phong;
                 }
 
-//                rayPower = intersection.z;
+                rayPower = intersection.z;
+
+                // global fog
+//                gl_FragColor += 0.4*fnoise(voxel.xz*0.05);
+
                 break;
 
             } else if (depth > MAX_PATH) {
                 break;
             }
         }
-
-    //global fog
-    gl_FragColor += 0.4*fnoise(pos+sin(0.1*time));
 }
