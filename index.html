@@ -1,0 +1,31 @@
+<!doctype>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>raytracing</title>
+    <style>
+        body { margin: 0; background: black; }
+        canvas { position: fixed; width: 100% !important; height: 100% !important; }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script src="lib/require.js"></script>
+    <script>
+        require.config({
+            baseUrl: './',
+            paths: {
+                three: 'lib/three',
+                stats: 'lib/stats',
+                text: 'lib/text'
+            },
+            shim: {
+                three: { exports: 'THREE' },
+                stats: { exports: 'Stats' }
+            }
+        });
+        require(['main']);
+    </script>
+</body>
+</html>
+
