@@ -58,7 +58,7 @@ float fnoise(vec2 seed) {
 
 vec3 world(vec3 voxel) {
     vec3 vTerrain = voxel;
-    vTerrain.y += 100.0*fnoise(voxel.xz/40.0 - time/10.0);
+    vTerrain.y += 100.0*fnoise(voxel.xz/40.0/* - time/10.0*/);
     return /*join(
         vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),*/
         vec3(plane(vTerrain + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
@@ -76,10 +76,10 @@ void main() {
     vec3 lookAt = vec3(0.0, 3.0, 0.0);
 
     // camera path
-//    float amp = 4.0;
-//    eye.x = amp*cos(time*.3);// + amp*cos(time*speed);
-//    eye.z = amp*sin(time*.1);// - amp*sin(time*speed);
-//    eye.y = 1.*abs(cos(time/100.0));
+    float amp = 4.0;
+    eye.x = amp*cos(time*.3);// + amp*cos(time*speed);
+    eye.z = amp*sin(time*.1);// - amp*sin(time*speed);
+    eye.y = 10.*abs(cos(time/10.0));
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -108,9 +108,9 @@ void main() {
             vec3 intersection = world(voxel);
             float d = intersection.x; // distance to the closest surface
             depth += d;
-            materialId = intersection.y; // material ID
+            materialId = intersection.y;
 
-            if (d < MIN_PATH_DELTA) { // the ray hits
+            if (d < MIN_PATH_DELTA) { // the ray hits the surface
 
                 normal = normalize(vec3(
                     world(voxel + gradientDelta.xyy).x - world(voxel - gradientDelta.xyy).x,
@@ -128,27 +128,23 @@ void main() {
                 if (materialId == 1.0) { // sun
                     gl_FragColor = vec4(1.0, 0.6, 0.0, 1.0);
                 } else if (materialId == 2.0) { // terrain
-//                    if (abs(voxel.y + 40.0) < 0.5) // debug red line
-//                        diffuseColor = vec4(1, 0, 0, 1);
-                    /*else */if (voxel.y < -20.0) { // water
-                        float q = depth / MAX_PATH * 2.0;
+                    if (voxel.y < -40.*abs(sin(time/10.))) { // water
+                        float q = clamp(depth / MAX_PATH*2., 0., 1.);
                         diffuseColor = vec4(0.3, 0.3, 1, 1);
-                        gl_FragColor = mix(diffuseColor, skyColor, q);
+                        gl_FragColor = mix(diffuseColor, 1.1*skyColor, q);
 //                        gl_FragColor = diffuseColor;
                     }
-//                    } else { // slope and peak
-                        float w = clamp(depth/MAX_PATH*5.0, 0., 1.);
-                        diffuseColor = vec4(0.3);
-                        gl_FragColor += mix(diffuseColor*phong, skyColor, w);
-//                    }
-
+                    // slope and peak
+                    float w = clamp(depth/MAX_PATH*5.0, 0., 1.);
+                    diffuseColor = vec4(0.3);
+                    gl_FragColor += mix(diffuseColor*phong, skyColor, w);
 //                    gl_FragColor = diffuseColor * phong;
                 }
 
                 rayPower = intersection.z;
 
                 // global fog
-//                gl_FragColor += 0.4*fnoise(voxel.xz*0.05);
+                gl_FragColor += 0.4*fnoise(voxel.xz*0.05);
 
                 break;
 
