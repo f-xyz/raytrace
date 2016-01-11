@@ -58,7 +58,7 @@ float fnoise(vec2 seed) {
 
 vec3 world(vec3 voxel) {
     vec3 vTerrain = voxel;
-    vTerrain.y += 100.0*fnoise(voxel.xz/40.0 - time/1.0);
+    vTerrain.y += 100.0*fnoise(voxel.xz/40.0 - time/10.0);
     return /*join(
         vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),*/
         vec3(plane(vTerrain + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
