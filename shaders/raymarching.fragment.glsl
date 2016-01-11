@@ -52,13 +52,13 @@ float fnoise(vec2 seed) {
 //         + 0.25 * noise(seed * 1.1)
 //         + 0.125 * noise(seed * 4.)
 //         + 0.0625 * noise(seed * 4.)
-//         + 0.03125 * noise(seed * 5.)
+         + 0.03125 * noise(seed * 5.)
     ;
 }
 
 vec3 world(vec3 voxel) {
     vec3 vTerrain = voxel;
-    vTerrain.y += 100.0*fnoise(voxel.xz/40.0/* - time/10.0*/);
+    vTerrain.y += 100.0*fnoise(voxel.xz/100.0/* - time/10.0*/);
     return /*join(
         vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),*/
         vec3(plane(vTerrain + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
@@ -79,7 +79,7 @@ void main() {
     float amp = 4.0;
     eye.x = amp*cos(time*.3);// + amp*cos(time*speed);
     eye.z = amp*sin(time*.1);// - amp*sin(time*speed);
-    eye.y = 10.*abs(cos(time/10.0));
+    eye.y = 4.+2.*abs(cos(time/10.0));
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -144,7 +144,7 @@ void main() {
                 rayPower = intersection.z;
 
                 // global fog
-                gl_FragColor += 0.4*fnoise(voxel.xz*0.05);
+                gl_FragColor -= 0.4*fnoise(voxel.xz*0.05);
 
                 break;
 
