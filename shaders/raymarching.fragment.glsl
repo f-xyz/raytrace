@@ -57,11 +57,13 @@ float fnoise(vec2 seed) {
 }
 
 vec3 world(vec3 voxel) {
-    vec3 vTerrain = voxel;
-    vTerrain.y += 100.0*fnoise(voxel.xz/100.0/* - time/10.0*/);
-    return /*join(
-        vec3(sphere(voxel + vec3(0.0, 10.0, 100.0), 40.0), 1.0, 1.0),*/
-        vec3(plane(vTerrain + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
+
+    vec3 vGround = voxel;
+    vGround.y += 100.0*fnoise(voxel.xz/100.0 - time/10.0);
+
+    return /*join(*/
+//        vec3(sphere(voxel + vec3(0.0, 100.0, -100.0), 40.0), 1.0, 1.0),
+        vec3(plane(vGround + vec3(0., 0., 20.), -1.0), 2.0, 1.0)
     /*)*/;
 }
 
@@ -131,11 +133,11 @@ void main() {
                     if (voxel.y < -40.*abs(sin(time/10.))) { // water
                         float q = clamp(depth / MAX_PATH*2., 0., 1.);
                         diffuseColor = vec4(0.3, 0.3, 1, 1);
-                        gl_FragColor = mix(diffuseColor, 1.1*skyColor, q);
+                        gl_FragColor = mix(diffuseColor, 0.0*skyColor, q);
 //                        gl_FragColor = diffuseColor;
                     }
                     // slope and peak
-                    float w = clamp(depth/MAX_PATH*5.0, 0., 1.);
+                    float w = clamp(depth/MAX_PATH*10.0, 0., 1.);
                     diffuseColor = vec4(0.3);
                     gl_FragColor += mix(diffuseColor*phong, skyColor, w);
 //                    gl_FragColor = diffuseColor * phong;
