@@ -51,7 +51,7 @@ float fnoise(vec2 seed) {
     return 0.5 * noise(seed)
 //         + 0.25 * noise(seed * 1.1)
 //         + 0.125 * noise(seed * 4.)
-//         + 0.0625 * noise(seed * 4.)
+         + 0.0625 * noise(seed * 4.)
          + 0.03125 * noise(seed * 5.)
     ;
 }
@@ -122,7 +122,7 @@ void main() {
                 rd = normalize(reflect(rd, normal));
                 ro = voxel + 2.0 * MIN_PATH_DELTA * rd; // 2.0 is for magic
 
-                vec3 light = vec3(0.0, 0.0, 1000.0);
+                vec3 light = vec3(100.0, 1.0, 0.0);
                 float phong = max(0.0, dot(normal, normalize(light.xyz - voxel)));
 
                 if (iReflection == 0.0) gl_FragColor = vec4(0);
@@ -130,23 +130,24 @@ void main() {
                 if (materialId == 1.0) { // sun
                     gl_FragColor = vec4(1.0, 0.6, 0.0, 1.0);
                 } else if (materialId == 2.0) { // terrain
-                    if (voxel.y < -40.*abs(sin(time/10.))) { // water
-                        float q = clamp(depth / MAX_PATH*2., 0., 1.);
-                        diffuseColor = vec4(0.3, 0.3, 1, 1);
-                        gl_FragColor = mix(diffuseColor, 0.0*skyColor, q);
-//                        gl_FragColor = diffuseColor;
-                    }
                     // slope and peak
-                    float w = clamp(depth/MAX_PATH*10.0, 0., 1.);
-                    diffuseColor = vec4(0.3);
+                    float w = clamp(depth/MAX_PATH*5.0, 0., 1.);
+                    diffuseColor = vec4(1.0);
                     gl_FragColor += mix(diffuseColor*phong, skyColor, w);
 //                    gl_FragColor = diffuseColor * phong;
+
+                    if (voxel.y < -40.*abs(sin(time/10.))) { // water
+                        float q = clamp(depth / MAX_PATH*1., 0., 1.);
+                        diffuseColor = vec4(0.3, 0.3, 1, 1);
+                        gl_FragColor += mix(diffuseColor, 0.0*skyColor, q);
+//                        gl_FragColor = diffuseColor;
+                    }
                 }
 
                 rayPower = intersection.z;
 
                 // global fog
-                gl_FragColor -= 0.4*fnoise(voxel.xz*0.05);
+//                gl_FragColor -= 0.4*fnoise(pos.xy*2.);
 
                 break;
 
