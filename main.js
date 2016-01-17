@@ -9,9 +9,10 @@ define(function(require/*, exports, module*/) {
 
     var size = new gl.Vector2(innerWidth, innerHeight)
         .divideScalar(isHD() ? 1 : 2);
-    var config = new gl.Vector3(1000, 0, 0); // iterations / not used / not used
+    var config = new gl.Vector3(1000, 0, 0);
     var isRunning = false;
     var time = 0;
+    var mouse = new gl.Vector2(0, 0);
 
     var canvas = document.querySelector('canvas');
     var renderer = new gl.WebGLRenderer({ canvas: canvas });
@@ -28,6 +29,7 @@ define(function(require/*, exports, module*/) {
         uniforms: {
             time: { type: 'f', value: 0 },
             resolution: { type: 'v2', value: size },
+            mouse: { type: 'v2', value: mouse },
             config: { type: 'v3' }
         }
     });
@@ -106,13 +108,25 @@ define(function(require/*, exports, module*/) {
                 }
                 break;
         }
-        console.log(e.keyCode);
+        console.log('keyup; code: ', e.keyCode);
+    }
+
+    function onMouseMove(e) {
+        mouse.x = e.clientX/window.innerWidth;
+        mouse.y = e.clientY/window.innerHeight;
+        mouse.multiplyScalar(2);
+        mouse.addScalar(-1);
+        console.log('mousemove', mouse.x, mouse.y);
+        if (!isRunning) {
+            render();
+        }
     }
 
     ///////////////////////////////////
 
     addEventListener('keydown', onKeyDown);
     addEventListener('keyup', onKeyUp);
+    addEventListener('mousemove', onMouseMove);
 
     ////////////////////////////////////
 
