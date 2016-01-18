@@ -126,7 +126,7 @@ define(function(require/*, exports, module*/) {
 
     addEventListener('keydown', onKeyDown);
     addEventListener('keyup', onKeyUp);
-    //addEventListener('mousemove', onMouseMove);
+    addEventListener('mousemove', onMouseMove);
 
     ////////////////////////////////////
 

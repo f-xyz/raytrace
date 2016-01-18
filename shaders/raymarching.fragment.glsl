@@ -1,6 +1,6 @@
 #define pi           3.14159265
-#define MAX_STEPS    32.0
-#define MAX_PATH     10.0
+#define MAX_STEPS    200.0
+#define MAX_PATH     40.0
 #define MIN_PATH     1e-2
 #define REFLECTIONS  1.0
 #define NORMAL_DELTA 1e-1
@@ -8,6 +8,12 @@
 uniform float time;
 uniform vec2 resolution;
 uniform vec2 mouse;
+
+struct intersection {
+    float path;
+    float material;
+    float power;
+};
 
 float box(vec3 v, vec3 size) {
     return length(max(abs(v)-size, 0.));
@@ -35,51 +41,68 @@ vec3 warp(vec3 v, float amount) {
     return q;
 }
 
-float world(vec3 v) {
-    vec3 vRotated = v;//warp(v, sin(time)/2.);
-    float s = sin(time);
-    float c = cos(time);
-    vRotated *= mat3(
+intersection join(intersection a, intersection b) {
+    float d = a.path - b.path;
+    if (d < 0.) return a;
+    else return b;
+}
+
+intersection world(vec3 v) {
+    vec3 vBox = v;//warp(v.yzx, sin(time)/4.);
+    float s = sin(time/2.);
+    float c = cos(time/2.);
+    vBox *= mat3(
         s,  c,  0,
         c, -s,  0,
         0,  0,  1
     );
-    return min(
-        max(
-            signedBox(vRotated, vec3(2.)),
-            -cross(vRotated, 1.5)
-        ),
-        v.y + 10.
+
+    intersection box;
+    box.path = max(
+        signedBox(vBox, vec3(2.5)),
+        -cross(vBox, 2.4)
     );
+    box.material = 0.;
+    box.power = 1.;
+
+    intersection plane;
+    plane.path = v.y + 10.;
+    plane.material = 1.;
+    plane.power = 1.;
+
+    return join(box, plane);
 }
 
-float trace(vec3 ro, vec3 rd, float offset) {
+intersection trace(vec3 ro, vec3 rd, float offset) {
+    intersection w;
     float path = offset;
     for (float i = 0.; i < MAX_STEPS; ++i) {
-        float d = world(ro + rd*path);
-        path += d;
-        if (d < /*path**/MIN_PATH) break;
+        w = world(ro + rd*path);
+        path += w.path;
+        if (w.path < path*MIN_PATH) break;
+        if (path > MAX_PATH) break;
     }
-    return path;
+    w.path = path;
+    return w;
 }
 
 vec3 getNormal(vec3 v) {
     vec2 e = vec2(NORMAL_DELTA, 0.);
-    float w = world(v);
+    float d = world(v).path;
     return normalize(vec3(
-        world(v+e.xyy) - w,
-        world(v+e.yxy) - w,
-        world(v+e.yyx) - w
+        world(v+e.xyy).path - d,
+        world(v+e.yxy).path - d,
+        world(v+e.yyx).path - d
     ));
 }
 
 vec4 getLight(vec3 v, vec3 normal, vec4 diffuse, vec4 color, vec3 pos) {
     vec3 lightDir = pos - v;
-    if (trace(v, normalize(lightDir), 0.1) < length(lightDir)) {
+    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
         return vec4(0., 0., 0., 1.);
     }
     return diffuse * color * max(0., dot(normal, normalize(lightDir)))
-//         / dot(lightDir, lightDir) // pointLight
+//      / dot(lightDir, lightDir) // pointLight
     ;
 }
 
@@ -87,7 +110,7 @@ float getAmbientOcclusion(vec3 v, vec3 normal) {
     float light = 0.;
     for (float i = 0.; i < 4.; ++i) {
         float path = 0.1*i;
-        float d = world(v + normal*path);
+        float d = world(v + normal*path).path;
         light += max(0., path - d);
     }
     return min(light, 1.);
@@ -98,22 +121,22 @@ void main() {
     float ratio = resolution.x/resolution.y;
     vec2 uv = 2.*gl_FragCoord.xy/resolution - 1.;
 
-    float eyeDistance = 5.0;
+    float eyeDist = 5.0;
 
     vec3 up     = vec3(0.0, 1.0, 0.0);
-    vec3 eye    = vec3(eyeDistance, eyeDistance, eyeDistance);
+    vec3 eye    = vec3(eyeDist, eyeDist, eyeDist);
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
-
-    // mouse
-//    eye.x = eyeDistance*sin(mouse.x*pi);
-//    eye.z = eyeDistance*cos(mouse.x*pi);
-//    eye.y = eyeDistance + eyeDistance*sin(mouse.y*pi/2.);
 
     // camera path
     float amp = 4.0;
     eye.x = amp*cos(time*.3);// + amp*cos(time*speed);
     eye.z = amp*sin(time*.1);// - amp*sin(time*speed);
     eye.y = amp+abs(cos(time/10.0));
+
+    // mouse
+//    eye.x = eyeDist*sin(mouse.x*pi);
+//    eye.z = eyeDist*cos(mouse.x*pi);
+//    eye.y = eyeDist + eyeDist*sin(mouse.y*pi/2.);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -123,19 +146,25 @@ void main() {
     vec3 rd = normalize(ro - eye); // ray direction
 
     //
-    float path = trace(ro, rd, 0.);
-    vec3 v = ro + rd*path;
+    intersection w = trace(ro, rd, 0.);
+    vec3 v = ro + rd*w.path;
     vec3 normal = getNormal(v);
     vec3 lightPos = vec3(0., 7., 0.);
     vec3 lightDir = lightPos - v;
     vec4 pointLight = getLight(v, normal, vec4(1,1,1,1), vec4(1,1,1,1), lightPos);
 
 //    float ambientOcclusion = getAmbientOcclusion(v, normal);
-//    vec4 ambientLight = vec4(1.0 - ambientOcclusion);
+//    vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
-    gl_FragColor = 0.2*(pointLight)*vec4(path/*+ambientLight*/);
+    if (w.material == 0.) {
+        gl_FragColor = w.path*pointLight*vec4(1.4, 1.6, 1.1, 1.);
+    } else if (w.material == 1.) {
+        gl_FragColor = w.path*pointLight*vec4(.8, .6, .4, 1.);
+    }
 
-    // fog
-    gl_FragColor = mix(gl_FragColor, vec4(0.), smoothstep(0., 30., path));
+    // fade
+    vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
+    gl_FragColor = mix(0.2*gl_FragColor, bg, smoothstep(0., 20., w.path));
+    gl_FragColor = mix(gl_FragColor, bg, 0.1);
 
 }
