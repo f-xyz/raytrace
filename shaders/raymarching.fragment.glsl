@@ -102,7 +102,7 @@ vec4 getLight(vec3 v, vec3 normal, vec4 diffuse, vec4 color, vec3 pos) {
         return vec4(0., 0., 0., 1.);
     }
     return diffuse * color * max(0., dot(normal, normalize(lightDir)))
-//      / dot(lightDir, lightDir) // pointLight
+//      / dot(lightDir, lightDir) // pointLight ~ 1 / r^2
     ;
 }
 
@@ -114,6 +114,16 @@ float getAmbientOcclusion(vec3 v, vec3 normal) {
         light += max(0., path - d);
     }
     return min(light, 1.);
+}
+
+vec4 getMaterial(intersection w, vec4 light) {
+    vec4 color = vec4(0., 0., 0., 1.);
+    if (w.material == 0.) {
+        color = w.path * light * vec4(1.4, 1.6, 1.1, 1.);
+    } else if (w.material == 1.) {
+        color = w.path * light * vec4(.8, .6, .4, 1.);
+    }
+    return color;
 }
 
 void main() {
@@ -129,8 +139,8 @@ void main() {
 
     // camera path
     float amp = 4.0;
-    eye.x = amp*cos(time*.3);// + amp*cos(time*speed);
-    eye.z = amp*sin(time*.1);// - amp*sin(time*speed);
+    eye.x = amp*cos(time*.3);
+    eye.z = amp*sin(time*.1);
     eye.y = amp+abs(cos(time/10.0));
 
     // mouse
@@ -156,13 +166,9 @@ void main() {
 //    float ambientOcclusion = getAmbientOcclusion(v, normal);
 //    vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
-    if (w.material == 0.) {
-        gl_FragColor = w.path*pointLight*vec4(1.4, 1.6, 1.1, 1.);
-    } else if (w.material == 1.) {
-        gl_FragColor = w.path*pointLight*vec4(.8, .6, .4, 1.);
-    }
+    gl_FragColor = getMaterial(w, pointLight);
 
-    // fade
+    // fog
     vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
     gl_FragColor = mix(0.2*gl_FragColor, bg, smoothstep(0., 20., w.path));
     gl_FragColor = mix(gl_FragColor, bg, 0.6);
