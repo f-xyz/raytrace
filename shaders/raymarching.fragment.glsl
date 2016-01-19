@@ -163,7 +163,7 @@ void main() {
     float amp = 4.0;
     lookAt.x = amp*cos(time*.3);
     lookAt.z = amp*sin(time*.1);
-    lookAt.y = amp+abs(cos(time/10.));
+    lookAt.y = amp*cos(time/10.);
 
     // mouse
 //    lookAt.x = eyeDist*sin(mouse.x*pi);
@@ -196,17 +196,15 @@ void main() {
 //        vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
         vec4 color = getMaterial(w, pointLight);
-        gl_FragColor += color;
-//        if (i > 0.) {
-//            gl_FragColor = vec4(1, 0, 0, 1);
-//        }
+        gl_FragColor += /*(REFLECTIONS-i)/REFLECTIONS**/color;
+//        gl_FragColor.g = w.path/100.;
 
         // fog
         vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
         gl_FragColor = mix(0.2*gl_FragColor, bg, smoothstep(0., 20., w.path));
         gl_FragColor = mix(gl_FragColor, bg, 0.6);
 
-//        break;
+        if (w.path > 20.) break;
 
         rd = normalize(reflect(rd, normal));
         ro = v + 2.*rd*MIN_PATH;
