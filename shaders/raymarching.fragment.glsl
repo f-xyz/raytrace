@@ -15,9 +15,9 @@ struct intersection {
     float reflectivity;
 };
 
-float box(vec3 v, vec3 size) {
-    return length(max(abs(v)-size, 0.));
-}
+//float box(vec3 v, vec3 size) {
+//    return length(max(abs(v)-size, 0.));
+//}
 
 float signedBox(vec3 v, vec3 size) {
     vec3 d = abs(v) - size;
@@ -68,15 +68,21 @@ intersection world(vec3 v) {
 
     intersection box;
     box.path = repeatedStuff(vBox);
+//    box.path = max(
+//        signedBox(vBox, vec3(8.)),
+//       -cross(vBox, 7.)
+//    );
     box.material = 0.;
     box.reflectivity = 1.;
 
-    intersection plane;
-    plane.path = v.y + 10.;
-    plane.material = 1.;
-    plane.reflectivity = 1.;
+    return box;
 
-    return join(box, plane);
+//    intersection plane;
+//    plane.path = v.y + 10.;
+//    plane.material = 1.;
+//    plane.reflectivity = 1.;
+
+//    return join(box, plane);
 }
 
 intersection trace(vec3 ro, vec3 rd, float offset) {
@@ -139,20 +145,30 @@ void main() {
 
     float eyeDist = 5.0;
 
+//    vec3 up     = vec3(0.0, 1.0, 0.0);
+//    vec3 eye    = vec3(eyeDist, eyeDist, eyeDist);
+//    vec3 lookAt = vec3(0.0, 0.0, 0.0);
+//
+//    // camera path
+//    float amp = 4.0;
+//    eye.x = amp*cos(time*.3);
+//    eye.z = amp*sin(time*.1);
+//    eye.y = amp+abs(cos(time/10.));
+
     vec3 up     = vec3(0.0, 1.0, 0.0);
-    vec3 eye    = vec3(eyeDist, eyeDist, eyeDist);
-    vec3 lookAt = vec3(0.0, 0.0, 0.0);
+    vec3 eye    = vec3(0.0, 0.0, 0.0);
+    vec3 lookAt = vec3(eyeDist, eyeDist, eyeDist);
 
     // camera path
     float amp = 4.0;
-    eye.x = amp*cos(time*.3);
-    eye.z = amp*sin(time*.1);
-    eye.y = amp+abs(cos(time/10.));
+    lookAt.x = amp*cos(time*.3);
+    lookAt.z = amp*sin(time*.1);
+    lookAt.y = amp+abs(cos(time/10.));
 
     // mouse
-//    eye.x = eyeDist*sin(mouse.x*pi);
-//    eye.z = eyeDist*cos(mouse.x*pi);
-//    eye.y = eyeDist + eyeDist*sin(mouse.y*pi/2.);
+//    lookAt.x = eyeDist*sin(mouse.x*pi);
+//    lookAt.z = eyeDist*cos(mouse.x*pi);
+//    lookAt.y = eyeDist + eyeDist*sin(mouse.y*pi/2.);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -179,7 +195,7 @@ void main() {
 //        float ambientOcclusion = getAmbientOcclusion(v, normal);
 //        vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
-          vec4 color = getMaterial(w, pointLight);
+        vec4 color = getMaterial(w, pointLight);
         gl_FragColor += color;
 //        if (i > 0.) {
 //            gl_FragColor = vec4(1, 0, 0, 1);
