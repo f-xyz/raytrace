@@ -52,7 +52,7 @@ float repeatedStuff(vec3 v) {
     vec3 q = mod(v, s) - .5*s;
     return max(
         signedBox(q, vec3(1.0)),
-       -cross(q, 0.3)
+       -cross(q, 0.2)
     );
 }
 
@@ -70,7 +70,7 @@ intersection world(vec3 v) {
     box.path = repeatedStuff(vBox);
 //    box.path = max(
 //        signedBox(vBox, vec3(8.)),
-//       -cross(vBox, 7.)
+//       -cross(vBox, 2.)
 //    );
     box.material = 0.;
     box.reflectivity = 1.;
