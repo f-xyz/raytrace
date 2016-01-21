@@ -3,7 +3,6 @@
 #define MAX_PATH     20.0
 #define MIN_PATH     1e-2
 #define REFLECTIONS  2.0
-#define NORMAL_DELTA 1e-1
 
 uniform float time;
 uniform vec2 resolution;
@@ -99,7 +98,7 @@ intersection trace(vec3 ro, vec3 rd, float offset) {
 }
 
 vec3 getNormal(vec3 v) {
-    vec2 e = vec2(NORMAL_DELTA, 0.);
+    vec2 e = vec2(MIN_PATH, 0.);
     float d = world(v).path;
     return normalize(vec3(
         world(v+e.xyy).path - d,
@@ -145,16 +144,6 @@ void main() {
 
     float eyeDist = 5.0;
 
-//    vec3 up     = vec3(0.0, 1.0, 0.0);
-//    vec3 eye    = vec3(eyeDist, eyeDist, eyeDist);
-//    vec3 lookAt = vec3(0.0, 0.0, 0.0);
-//
-//    // camera path
-//    float amp = 4.0;
-//    eye.x = amp*cos(time*.3);
-//    eye.z = amp*sin(time*.1);
-//    eye.y = amp+abs(cos(time/10.));
-
     vec3 up     = vec3(0.0, 1.0, 0.0);
     vec3 eye    = vec3(0.0, 0.0, 0.0);
     vec3 lookAt = vec3(eyeDist, eyeDist, eyeDist);
@@ -196,7 +185,7 @@ void main() {
 //        vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
         vec4 color = getMaterial(w, pointLight);
-        gl_FragColor += /*(REFLECTIONS-i)/REFLECTIONS**/color;
+        gl_FragColor += /*(REFLECTIONS-i)/REFLECTIONS**/clamp(color, 0., 5.);
 //        gl_FragColor.g = w.path/100.;
 
         // fog
