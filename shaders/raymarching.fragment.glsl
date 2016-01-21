@@ -191,7 +191,7 @@ void main() {
         // fog
         vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
         gl_FragColor = mix(0.2*gl_FragColor, bg, smoothstep(0., 20., w.path));
-        gl_FragColor = mix(gl_FragColor, bg, 0.6);
+        gl_FragColor = mix(gl_FragColor, bg, 0.5);
 
         if (w.path > 20.) break;
 
