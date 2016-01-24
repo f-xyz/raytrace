@@ -1,14 +1,16 @@
-define(function(require/*, exports, module*/) {
+define(function(require, exports, module) {
     'use strict';
 
     var gl = require('three');
     var Stats = require('stats');
+    var routing = require('./routing');
+    var shaders = require('./shaders');
 
     var stats = new Stats();
     document.body.appendChild(stats.domElement);
 
     var size = new gl.Vector2(innerWidth, innerHeight)
-        .divideScalar(isHD() ? .5 : 2);
+        .divideScalar(routing.hd ? .5 : 2);
     var config = new gl.Vector3(1000, 0, 0);
     var isRunning = false;
     var time = 0;
@@ -24,8 +26,8 @@ define(function(require/*, exports, module*/) {
 
     var scene = new gl.Scene();
     var shader = new gl.ShaderMaterial({
-        vertexShader:   require('text!./shaders/raymarching.vertex.glsl'),
-        fragmentShader: require('text!./shaders/raymarching.fragment.glsl'),
+        vertexShader:   shaders.vertex.projection,
+        fragmentShader: shaders.fragment[routing.shader || 'upstream'],
         uniforms: {
             time: { type: 'f', value: 0 },
             resolution: { type: 'v2', value: size },
@@ -38,9 +40,23 @@ define(function(require/*, exports, module*/) {
     scene.add(box);
     renderer.render(scene, camera);
 
-    if (shouldAutoStart()) {
+    var selectShader = document.getElementById('select-shader');
+    selectShader.value = routing.shader || 'upstream';
+    selectShader.addEventListener('change', onShaderChanged);
+
+    if (routing.start) {
         start();
     }
+
+    console.log('done');
+
+    ///////////////////////////////////
+
+    // todo
+    module.exports = {
+        size, config, isRunning,
+        start, stop
+    };
 
     ///////////////////////////////////
 
@@ -108,7 +124,7 @@ define(function(require/*, exports, module*/) {
                 }
                 break;
         }
-        console.log('keyup; code: ', e.keyCode);
+        console.log('keyup', e.keyCode);
     }
 
     function onMouseMove(e) {
@@ -116,10 +132,28 @@ define(function(require/*, exports, module*/) {
         mouse.y = e.clientY/window.innerHeight;
         mouse.multiplyScalar(2);
         mouse.addScalar(-1);
-        console.log('mousemove', mouse.x, mouse.y);
         if (!isRunning) {
             render();
         }
+        console.log('mousemove', mouse.x, mouse.y);
+    }
+
+    function onShaderChanged() {
+        console.log('onShaderChanged', selectShader.value);
+        shader.fragmentShader = shaders.fragment[selectShader.value];
+        shader.needsUpdate = true;
+        setHash();
+        render();
+    }
+
+    ///////////////////////////////////
+
+    function setHash() {
+        var hash = [];
+        hash.push('shader:' + selectShader.value);
+        if (routing.start) hash.push('start');
+        if (routing.hd) hash.push('hd');
+        location.hash = hash.join('/');
     }
 
     ///////////////////////////////////
@@ -127,15 +161,5 @@ define(function(require/*, exports, module*/) {
     addEventListener('keydown', onKeyDown);
     addEventListener('keyup', onKeyUp);
     addEventListener('mousemove', onMouseMove);
-
-    ////////////////////////////////////
-
-    function isHD() {
-        return location.hash.match(/hd/);
-    }
-
-    function shouldAutoStart() {
-        return location.hash.match(/start/);
-    }
 
 });

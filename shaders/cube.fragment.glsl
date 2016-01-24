@@ -1,6 +1,6 @@
 #define pi           3.14159265
 #define MAX_STEPS    40.0
-#define MAX_PATH     100.0
+#define MAX_PATH     20.0
 #define MIN_PATH     1e-2
 #define REFLECTIONS  2.0
 
@@ -12,12 +12,7 @@ struct intersection {
     float path;
     float material;
     float reflectivity;
-    vec3 voxel;
 };
-
-float sphere(vec3 v, float r) {
-    return length(v) - r;
-}
 
 //float box(vec3 v, vec3 size) {
 //    return length(max(abs(v)-size, 0.));
@@ -61,8 +56,7 @@ float repeatedStuff(vec3 v) {
 }
 
 intersection world(vec3 v) {
-
-//    vec3 vRotated = v;
+    vec3 vBox = v;
 //    float s = sin(time/2.);
 //    float c = cos(time/2.);
 //    vBox *= mat3(
@@ -71,41 +65,34 @@ intersection world(vec3 v) {
 //        0,  0,  1
 //    );
 
-    intersection sphere1;
-    sphere1.path = sphere(v + vec3(0., 0., 6.), 5.);
-    sphere1.material = 0.;
-    sphere1.reflectivity = 1.;
+    intersection box;
+    box.path = max(
+        signedBox(vBox, vec3(8.)),
+       -cross(vBox, 2.)
+    );
+    box.material = 0.;
+    box.reflectivity = 1.;
 
-//    return sphere1;
-
-    intersection sphere2;
-    sphere2.path = sphere(v + vec3(0., 0., -6.), 5.);
-    sphere2.material = 0.;
-    sphere2.reflectivity = 1.;
+//    return box;
 
     intersection plane;
     plane.path = v.y + 10.;
     plane.material = 1.;
     plane.reflectivity = 1.;
 
-//    return plane;
-
-    return join(sphere1, join(sphere2, plane));
+    return join(box, plane);
 }
 
 intersection trace(vec3 ro, vec3 rd, float offset) {
     intersection w;
-    vec3 voxel;
     float path = offset;
     for (float i = 0.; i < MAX_STEPS; ++i) {
-        voxel = ro + rd*path;
-        w = world(voxel);
+        w = world(ro + rd*path);
         path += w.path;
         if (w.path < path*MIN_PATH) break;
         if (path > MAX_PATH) break;
     }
     w.path = path;
-    w.voxel = voxel;
     return w;
 }
 
@@ -119,7 +106,7 @@ vec3 getNormal(vec3 v) {
     ));
 }
 
-vec4 getDirLight(vec3 v, vec3 normal, vec4 diffuse, vec4 color, vec3 pos) {
+vec4 getLight(vec3 v, vec3 normal, vec4 diffuse, vec4 color, vec3 pos) {
     vec3 lightDir = pos - v;
 //    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
 //        return vec4(0., 0., 0., 1.);
@@ -140,16 +127,11 @@ float getAmbientOcclusion(vec3 v, vec3 normal) {
 }
 
 vec4 getMaterial(intersection w, vec4 light) {
-    vec4 color = vec4(1., 1., 1., 1.);
+    vec4 color = vec4(0., 0., 0., 1.);
     if (w.material == 0.) {
-        color = light * vec4(0.4, 0.6, 0.1, 1.);
+        color = w.path * light * vec4(1.4, 1.6, 1.1, 1.);
     } else if (w.material == 1.) {
-        if (fract(w.voxel.x/10. - 0.5) < 0.1
-        ||  fract(w.voxel.z/10. - 0.5) < 0.1) {
-            color = vec4(.8, .6, .4, 1.);
-        } else {
-            color = vec4(.0, .0, .0, 1.);
-        }
+        color = w.path * light * vec4(.8, .6, .4, 1.);
     }
     return color;
 }
@@ -159,17 +141,17 @@ void main() {
     float ratio = resolution.x/resolution.y;
     vec2 uv = 2.*gl_FragCoord.xy/resolution - 1.;
 
-    float eyeDist = 10.0;
+    float eyeDist = 5.0;
 
     vec3 up     = vec3(0.0, 1.0, 0.0);
-    vec3 eye    = vec3(0.0, 0.0, eyeDist);
-    vec3 lookAt = vec3(0.0, 0.0, 0.0);
+    vec3 eye    = vec3(0.0, 0.0, 0.0);
+    vec3 lookAt = vec3(eyeDist, eyeDist, eyeDist);
 
     // camera path
-    float amp = eyeDist;
-    eye.x = amp*cos(time*0.3);
-    eye.z = amp*sin(time*0.1);
-    eye.y = amp*cos(time/10.);
+    float amp = 4.0;
+    lookAt.x = amp*cos(time*.3);
+    lookAt.z = amp*sin(time*.1);
+    lookAt.y = amp*cos(time/10.);
 
     // mouse
 //    lookAt.x = eyeDist*sin(mouse.x*pi);
@@ -190,37 +172,27 @@ void main() {
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-        if (w.path < 0.) break;
+//        if (w.path < 0.) break;
 
         vec3 v = ro + rd*w.path;
         vec3 normal = getNormal(v);
-        vec3 lightPos = vec3(10., 10., 10.);
+        vec3 lightPos = vec3(0., 7., 0.);
         vec3 lightDir = lightPos - v;
-        vec4 dirLight = getDirLight(v, normal, vec4(1,1,1,1), vec4(1,1,1,1), lightPos);
+        vec4 pointLight = getLight(v, normal, vec4(1,1,1,1), vec4(1,1,1,1), lightPos);
 
 //        float ambientOcclusion = getAmbientOcclusion(v, normal);
 //        vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
-        float reflectivity = i == 0. ? .5 : 1.;//(REFLECTIONS - i) / REFLECTIONS;
-        vec4 color = getMaterial(w, dirLight);
-//        vec4 color = /*w.path * */ditLight * vec4(0.4, 0.6, 0.1, 1.);
-//        color += ambientLight;
-        gl_FragColor += reflectivity * color;
+        vec4 color = getMaterial(w, pointLight);
+        gl_FragColor += /*(REFLECTIONS-i)/REFLECTIONS**/clamp(color, 0., 5.);
 //        gl_FragColor.g = w.path/100.;
-//        gl_FragColor = color;
 
         // fog
-        vec4 bg = vec4(.3, .3, .3, 1.);
-        gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
-//        gl_FragColor = mix(gl_FragColor, bg, 0.5);
+        vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
+        gl_FragColor = mix(0.2*gl_FragColor, bg, smoothstep(0., 20., w.path));
+        gl_FragColor = mix(gl_FragColor, bg, 0.5);
 
-        // reflection
-
-//        break;
-
-//        if (w.path > 20.) {
-//            gl_FragColor.r = 1.;
-//        };
+        if (w.path > 20.) break;
 
         rd = normalize(reflect(rd, normal));
         ro = v + 2.*rd*MIN_PATH;
