@@ -190,7 +190,7 @@ void main() {
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-        if (w.path < 0.) break;
+//        if (w.path < 0.) break; // ???
 
         vec3 v = ro + rd*w.path;
         vec3 normal = getNormal(v);
@@ -201,7 +201,7 @@ void main() {
 //        float ambientOcclusion = getAmbientOcclusion(v, normal);
 //        vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
-        float reflectivity = i == 0. ? .5 : 1.;//(REFLECTIONS - i) / REFLECTIONS;
+        float reflectivity = i == 0. ? .5 : .0;//(REFLECTIONS - i) / REFLECTIONS;
         vec4 color = getMaterial(w, dirLight);
 //        vec4 color = /*w.path * */ditLight * vec4(0.4, 0.6, 0.1, 1.);
 //        color += ambientLight;
@@ -211,7 +211,7 @@ void main() {
 
         // fog
         vec4 bg = vec4(.3, .3, .3, 1.);
-        gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
+//        gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
 //        gl_FragColor = mix(gl_FragColor, bg, 0.5);
 
         // reflection
