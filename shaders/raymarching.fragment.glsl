@@ -158,7 +158,7 @@ vec4 getMaterial(intersection w, vec4 light) {
 
     } else if (w.material == 2.) {
 
-        color = light * vec4(0.1);
+        color = light * vec4(1.3);
 
     }
 
@@ -200,7 +200,10 @@ void main() {
     vec3 rd = normalize(ro - eye); // ray direction
 
     //
-    gl_FragColor = vec4(0., 0., 0., 1.);
+    vec4 bg = vec4(.1);
+//    bg.r = .05 * (uv.y + 1.);
+//    bg.b = .25 * (uv.x + 1.);
+    gl_FragColor = bg;
 
     //
     for (float i = 0.; i < REFLECTIONS; ++i) {
@@ -220,27 +223,18 @@ void main() {
 
         float reflectivity = (REFLECTIONS - i) / REFLECTIONS;
         vec4 color = getMaterial(w, dirLight);
-//        vec4 color = .1 * w.path * /*dirLight **/ vec4(1.);
 //        color += ambientLight;
-//        gl_FragColor += reflectivity * color;
-        gl_FragColor += color;
+        gl_FragColor += reflectivity * color;
 
         // fog
-//        vec4 bg = vec4(0.);
-//        gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
-
-        // reflection
+        if (i == 0.) {
+            gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
+        }
 
 //        break;
 
-//        if (w.path > 100.) {
-//            gl_FragColor = vec4(0.);
-//            break;
-//        };
-
+        // reflection
         rd = normalize(reflect(rd, normal));
         ro = v + 2.*rd*MIN_PATH;
     }
-
-//    gl_FragColor *= 0.001;
 }
