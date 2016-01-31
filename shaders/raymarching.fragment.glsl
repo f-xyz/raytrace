@@ -2,7 +2,7 @@
 #define MAX_STEPS    40.0
 #define MAX_PATH     100.0
 #define MIN_PATH     1e-2
-#define REFLECTIONS  2.0
+#define REFLECTIONS  3.0
 
 uniform float time;
 uniform vec2 resolution;
@@ -76,30 +76,22 @@ intersection world(vec3 v) {
     sphere1.material = 0.;
     sphere1.reflectivity = 1.;
 
-//    return sphere1;
-
-//    intersection sphere2;
-//    sphere2.path = sphere(v + vec3(0., 0., -6.), 5.);
-//    sphere2.material = 0.;
-//    sphere2.reflectivity = 1.;
+    intersection sphere2;
+    sphere2.path = sphere(v + vec3(0., 0., -15.), 5.);
+    sphere2.material = 2.;
+    sphere2.reflectivity = 1.;
 
     intersection plane1;
-    plane1.path = v.y + 10.;
+    plane1.path = v.y + 20.;
     plane1.material = 1.;
     plane1.reflectivity = 1.;
 
-//    intersection universe;
-//    universe.path = signedBox(v, vec3(4.));
-//    universe.material = 2.;
-//    universe.reflectivity = 1.;
+    intersection universe;
+    universe.path = signedBox(v + vec3(10., 0., 0.), vec3(4.));
+    universe.material = 2.;
+    universe.reflectivity = 1.;
 
-//    return join(universe, sphere1);
-
-//    return plane1;
-
-//    return join(sphere1, join(sphere2, join(plane1, universe)));
-
-    return join(plane1, sphere1);
+    return join(sphere1, join(sphere2, join(plane1, universe)));
 }
 
 intersection trace(vec3 ro, vec3 rd, float offset) {
@@ -110,8 +102,8 @@ intersection trace(vec3 ro, vec3 rd, float offset) {
         voxel = ro + rd*path;
         w = world(voxel);
         path += w.path;
-        if (w.path < path*MIN_PATH) break;
-        if (path > MAX_PATH) break;
+//        if (w.path < path*MIN_PATH) break;
+//        if (path > MAX_PATH) break;
     }
     w.path = path;
     w.voxel = voxel;
@@ -159,19 +151,14 @@ vec4 getMaterial(intersection w, vec4 light) {
 
         if (fract(w.voxel.x/10. - .5) < 0.1
         ||  fract(w.voxel.z/10. - .5) < 0.1) {
-            color = vec4(.8, .6, .4, 1.);
+            color = vec4(.4, .6, .8, 1.);
         } else {
             color = vec4(.0, .0, .0, 1.);
         }
 
     } else if (w.material == 2.) {
 
-        if (fract(w.voxel.x - .5) < 0.05
-        ||  fract(w.voxel.z - .5) < 0.05) {
-            color = vec4(.8, .6, .4, 1.);
-        } else {
-            color = vec4(.0, .0, .0, 1.);
-        }
+        color = light * vec4(0.1);
 
     }
 
@@ -191,9 +178,9 @@ void main() {
 
     // camera path
     float amp = eyeDist;
-    eye.x = amp*cos(time*0.3);
-    eye.z = amp*sin(time*0.1);
-    eye.y = amp*cos(time/10.);
+    eye.x = amp*cos(time*0.3 + 1.);
+    eye.z = amp*sin(time*0.1 + 2.);
+    eye.y = amp*cos(time/10. + 1.);
 
 //    float amp = eyeDist;
 //    lookAt.x = amp*cos(time*0.3);
@@ -236,13 +223,11 @@ void main() {
 //        vec4 color = .1 * w.path * /*dirLight **/ vec4(1.);
 //        color += ambientLight;
 //        gl_FragColor += reflectivity * color;
-//        gl_FragColor.g = w.path/100.;
         gl_FragColor += color;
 
         // fog
-//        vec4 bg = vec4(.1, .5, .8, 1.);
+//        vec4 bg = vec4(0.);
 //        gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
-//        gl_FragColor = mix(gl_FragColor, bg, 0.5);
 
         // reflection
 
