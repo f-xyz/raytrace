@@ -158,7 +158,7 @@ vec4 getMaterial(intersection w, vec4 light) {
 
     } else if (w.material == 2.) {
 
-        color = light * vec4(1.3);
+        color = light * vec4(0.3);
 
     }
 
@@ -170,7 +170,7 @@ void main() {
     float ratio = resolution.x / resolution.y;
     vec2 uv = 2. * gl_FragCoord.xy / resolution - 1.;
 
-    float eyeDist = 10.0;
+    float eyeDist = 12.0;
 
     vec3 up     = vec3(0.0, 1.0, 0.0);
     vec3 eye    = vec3(0.0, 0.0, 10.0);
@@ -201,8 +201,6 @@ void main() {
 
     //
     vec4 bg = vec4(.1);
-//    bg.r = .05 * (uv.y + 1.);
-//    bg.b = .25 * (uv.x + 1.);
     gl_FragColor = bg;
 
     //
