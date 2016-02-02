@@ -86,12 +86,12 @@ intersection world(vec3 v) {
     plane1.material = 1.;
     plane1.reflectivity = 1.;
 
-    intersection universe;
-    universe.path = signedBox(v + vec3(10., 0., 0.), vec3(4.));
-    universe.material = 2.;
-    universe.reflectivity = 1.;
+    intersection box;
+    box.path = signedBox(v + vec3(15., 0., 0.), vec3(4.));
+    box.material = 2.;
+    box.reflectivity = 1.;
 
-    return join(sphere1, join(sphere2, join(plane1, universe)));
+    return join(sphere1, join(sphere2, join(plane1, box)));
 }
 
 intersection trace(vec3 ro, vec3 rd, float offset) {
@@ -102,8 +102,8 @@ intersection trace(vec3 ro, vec3 rd, float offset) {
         voxel = ro + rd*path;
         w = world(voxel);
         path += w.path;
-//        if (w.path < path*MIN_PATH) break;
-//        if (path > MAX_PATH) break;
+        if (w.path < path*MIN_PATH) break;
+        if (path > MAX_PATH) break;
     }
     w.path = path;
     w.voxel = voxel;
@@ -122,11 +122,11 @@ vec3 getNormal(vec3 v) {
 
 vec4 getDirLight(vec3 v, vec3 normal, vec4 diffuse, vec4 color, vec3 pos) {
     vec3 lightDir = pos - v;
-//    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
-//        return vec4(0., 0., 0., 1.);
-//    }
+    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
+        return vec4(0.);
+    }
     return diffuse * color * max(0., dot(normal, normalize(lightDir)))
-//      / dot(lightDir, lightDir) // pointLight ~ 1 / r^2
+//      / dot(lightDir, lightDir) // pointLight ~ 1/r^2
     ;
 }
 
@@ -141,7 +141,7 @@ float getAmbientOcclusion(vec3 v, vec3 normal) {
 }
 
 vec4 getMaterial(intersection w, vec4 light) {
-    vec4 color = vec4(1., 1., 1., 1.);
+    vec4 color = vec4(1.);
 
     if (w.material == 0.) {
 
@@ -149,16 +149,20 @@ vec4 getMaterial(intersection w, vec4 light) {
 
     } else if (w.material == 1.) {
 
+        if (light == vec4(0.)) {
+            light = vec4(.2);
+        }
+
         if (fract(w.voxel.x/10. - .5) < 0.1
         ||  fract(w.voxel.z/10. - .5) < 0.1) {
-            color = vec4(.4, .6, .8, 1.);
+            color = light * vec4(.4, .6, .8, 1.);
         } else {
-            color = vec4(.0, .0, .0, 1.);
+            color = light * vec4(.3);
         }
 
     } else if (w.material == 2.) {
 
-        color = light * vec4(0.3);
+        color = light * vec4(.3);
 
     }
 
@@ -177,20 +181,9 @@ void main() {
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    float amp = eyeDist;
-    eye.x = amp*cos(time*0.3 + 1.);
-    eye.z = amp*sin(time*0.1 + 2.);
-    eye.y = amp*cos(time/10. + 1.);
-
-//    float amp = eyeDist;
-//    lookAt.x = amp*cos(time*0.3);
-//    lookAt.z = amp*sin(time*0.1);
-//    lookAt.y = amp*cos(time/10.);
-
-    // mouse
-//    lookAt.x = eyeDist*sin(mouse.x*pi);
-//    lookAt.z = eyeDist*cos(mouse.x*pi);
-//    lookAt.y = eyeDist + eyeDist*sin(mouse.y*pi/2.);
+    eye.x = eyeDist*(cos(time*0.3 + 1.) + sin(pi*(mouse.x/2.+.5)));
+    eye.z = eyeDist*(sin(time*0.1 + 2.) + cos(pi*(mouse.x/2.+.5)));
+    eye.y = eyeDist*(cos(time/10. + 1.) - mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));

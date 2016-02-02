@@ -2,7 +2,7 @@
 #define MAX_STEPS    40.0
 #define MAX_PATH     20.0
 #define MIN_PATH     1e-2
-#define REFLECTIONS  2.0
+#define REFLECTIONS  3.0
 
 uniform float time;
 uniform vec2 resolution;
@@ -141,22 +141,14 @@ void main() {
     float ratio = resolution.x/resolution.y;
     vec2 uv = 2.*gl_FragCoord.xy/resolution - 1.;
 
-    float eyeDist = 5.0;
-
     vec3 up     = vec3(0.0, 1.0, 0.0);
     vec3 eye    = vec3(0.0, 0.0, 0.0);
-    vec3 lookAt = vec3(eyeDist, eyeDist, eyeDist);
+    vec3 lookAt = vec3(1.0, 0.0, 1.0);
 
     // camera path
-    float amp = 4.0;
-    lookAt.x = amp*cos(time*.3);
-    lookAt.z = amp*sin(time*.1);
-    lookAt.y = amp*cos(time/10.);
-
-    // mouse
-//    lookAt.x = eyeDist*sin(mouse.x*pi);
-//    lookAt.z = eyeDist*cos(mouse.x*pi);
-//    lookAt.y = eyeDist + eyeDist*sin(mouse.y*pi/2.);
+    lookAt.x = sin(time*.3) + sin(pi*(mouse.x/2.+.5));
+    lookAt.z = sin(time*.2) + cos(pi*(mouse.x/2.+.5));
+    lookAt.y = sin(time/10.) - mouse.y;
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));

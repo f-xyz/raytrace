@@ -142,22 +142,14 @@ void main() {
     float ratio = resolution.x/resolution.y;
     vec2 uv = 2.*gl_FragCoord.xy/resolution - 1.;
 
-    float eyeDist = 5.0;
-
     vec3 up     = vec3(0.0, 1.0, 0.0);
     vec3 eye    = vec3(0.0, 0.0, 0.0);
-    vec3 lookAt = vec3(eyeDist, eyeDist, eyeDist);
+    vec3 lookAt = vec3(1.0, 0.0, 1.0);
 
     // camera path
-    float amp = 4.0;
-    lookAt.x = amp*cos(time*.3);
-    lookAt.z = amp*sin(time*.1);
-    lookAt.y = amp*cos(time/10.);
-
-    // mouse
-//    lookAt.x = eyeDist*sin(mouse.x*pi);
-//    lookAt.z = eyeDist*cos(mouse.x*pi);
-//    lookAt.y = eyeDist + eyeDist*sin(mouse.y*pi/2.);
+    lookAt.x = sin(time*.3) + sin(pi*(mouse.x/2.+.5));
+    lookAt.z = sin(time*.2) + cos(pi*(mouse.x/2.+.5));
+    lookAt.y = sin(time/10.) - mouse.y;
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -167,29 +159,29 @@ void main() {
     vec3 rd = normalize(ro - eye); // ray direction
 
     //
-    gl_FragColor = vec4(0., 0., 0., 1.);
+    vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
+    gl_FragColor = bg;
 
     //
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-//        if (w.path < 0.) break;
+        if (w.path < 0.) break;
+//        if (w.path > MAX_PATH) break;
 
         vec3 v = ro + rd*w.path;
         vec3 normal = getNormal(v);
         vec3 lightPos = vec3(0., 7., 0.);
         vec3 lightDir = lightPos - v;
-        vec4 pointLight = getLight(v, normal, vec4(1,1,1,1), vec4(1,1,1,1), lightPos);
+        vec4 pointLight = getLight(v, normal, vec4(1.), vec4(1.), lightPos);
 
 //        float ambientOcclusion = getAmbientOcclusion(v, normal);
 //        vec4 ambientLight = vec4(0.0/* - ambientOcclusion*/);
 
         vec4 color = getMaterial(w, pointLight);
-        gl_FragColor += /*(REFLECTIONS-i)/REFLECTIONS**/clamp(color, 0., 5.);
-//        gl_FragColor.g = w.path/100.;
+        gl_FragColor += clamp(color, 0., 5.);
 
         // fog
-        vec4 bg = vec4(sin(uv.x), .3, cos(uv.x), 1.);
         gl_FragColor = mix(0.2*gl_FragColor, bg, smoothstep(0., 20., w.path));
         gl_FragColor = mix(gl_FragColor, bg, 0.5);
 
@@ -198,7 +190,4 @@ void main() {
         rd = normalize(reflect(rd, normal));
         ro = v + 2.*rd*MIN_PATH;
     }
-
-//    gl_FragColor *= 0.001;
-
 }
