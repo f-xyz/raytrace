@@ -72,7 +72,7 @@ intersection world(vec3 v) {
 //    );
 
     intersection sphere1;
-    sphere1.path = sphere(v, 5.);
+    sphere1.path = sphere(v + vec3(0., 0., 10.), 7.);
     sphere1.material = 0.;
     sphere1.reflectivity = 1.;
 
