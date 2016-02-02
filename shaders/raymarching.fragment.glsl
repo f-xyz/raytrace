@@ -157,7 +157,7 @@ vec4 getMaterial(intersection w, vec4 light) {
         ||  fract(w.voxel.z/10. - .5) < 0.1) {
             color = light * vec4(.4, .6, .8, 1.);
         } else {
-            color = light * vec4(.3);
+            color = light * vec4(.2);
         }
 
     } else if (w.material == 2.) {
@@ -205,7 +205,7 @@ void main() {
 
         vec3 v = ro + rd*w.path;
         vec3 normal = getNormal(v);
-        vec3 lightPos = vec3(10., 10., 10.);
+        vec3 lightPos = vec3(0., 20., 0.);
         vec3 lightDir = lightPos - v;
         vec4 dirLight = getDirLight(v, normal, vec4(1,1,1,1), vec4(1,1,1,1), lightPos);
 
