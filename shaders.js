@@ -10,7 +10,8 @@ define(function (require, exports, module) {
             cube: require('text!./shaders/cube.fragment.glsl'),
             spongebob: require('text!./shaders/spongebob.fragment.glsl'),
             mountains: require('text!./shaders/mountains.fragment.glsl'),
-            night: require('text!./shaders/night.fragment.glsl')
+            night: require('text!./shaders/night.fragment.glsl'),
+            refraction: require('text!./shaders/refraction.fragment.glsl')
         }
     };
 
