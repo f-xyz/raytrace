@@ -17,5 +17,5 @@ commitMessage=$1
 
 git add --all .
 git commit -m "${commitMessage}"
-git push :gh-pages
+git push origin :gh-pages
 git push --all
