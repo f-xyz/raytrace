@@ -138,6 +138,15 @@ define(function(require, exports, module) {
         console.log('mousemove', mouse.x, mouse.y);
     }
 
+    function onCLick() {
+        console.log('click');
+        if (isRunning) {
+            stop();
+        } else {
+            start();
+        }
+    }
+
     function onShaderChanged() {
         console.log('onShaderChanged', selectShader.value);
         shader.fragmentShader = shaders.fragment[selectShader.value];
@@ -158,8 +167,9 @@ define(function(require, exports, module) {
 
     ///////////////////////////////////
 
-    addEventListener('keydown', onKeyDown);
-    addEventListener('keyup', onKeyUp);
-    addEventListener('mousemove', onMouseMove);
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('mousemove', onMouseMove);
+    canvas.addEventListener('click', onCLick);
 
 });

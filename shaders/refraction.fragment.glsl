@@ -61,26 +61,47 @@ float repeatedStuff(vec3 v) {
     );
 }
 
-intersection world(vec3 v) {
+intersection smoothJoin(intersection a, intersection b, float k) { // k = 0.1 is good
+    float aPath = -log(exp(-k*a.path) + exp(-k*b.path)) / k;
+    float bPath = -log(exp(-k*a.path) + exp(-k*b.path)) / k;
+    intersection res;
+    if (max(aPath, -bPath) == aPath) {
+        res = a;
+        res.path = aPath;
+    } else {
+        res = b;
+        res.path = bPath;
+    }
+    return res;
+}
 
+intersection world(vec3 v) {
     vec3 vRotated = v;
     float s = sin(time/10.);
-    float c = cos(time/30.);
+    float c = cos(time/10.);
     vRotated *= mat3(
         s,  c,  0,
         c, -s,  0,
         0,  0,  1
+    ) * mat3(
+        s,  0,  c,
+        0,  1,  0,
+        c,  0, -s
     );
 
-    // stuff
+    // sphere(v + vec3(0., 0., 10.), 4.)
+
+    //
     intersection stuff;
-    stuff.path = /*sphere(v + vec3(0., 0., 10.), 4.)*/max(
-        signedBox(vRotated + vec3(0., 0., 10.), vec3(4.)),
-       -cross(vRotated + vec3(0., 0., 10.), 3.)
+    stuff.path = max(
+        signedBox(vRotated + vec3(0., 0., 0.), vec3(4.)),
+       -cross(vRotated + vec3(0., 0., 10.), 3.0)
     );
     stuff.material = 0.;
     stuff.reflectivity = 1.;
     stuff.opacity = 1.3;
+
+    return stuff;
 
     // waves
 //    vec3 vWave = v;
@@ -95,7 +116,7 @@ intersection world(vec3 v) {
 
     // ground
     intersection plane;
-    plane.path = wv.y + 20.;
+    plane.path = v.y + 20.;
     plane.material = 2.;
     plane.reflectivity = 1.;
     plane.opacity = 1.;
@@ -131,9 +152,9 @@ vec3 getNormal(vec3 v) {
 
 vec4 getDirLight(vec3 v, vec3 normal, vec3 pos) {
     vec3 lightDir = pos - v;
-//    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
-//        return vec4(0.);
-//    }
+    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
+        return vec4(0.);
+    }
     return vec4(1.) * abs(dot(normal, normalize(lightDir)))
 //      / dot(lightDir, lightDir) // pointLight ~ 1/r^2
     ;
@@ -192,14 +213,14 @@ void main() {
     vec3 rd = normalize(ro - eye); // ray direction
 
     // clear
-    vec4 bg = vec4(uv.y, .4, .9, 1.);
+    vec4 bg = vec4(.0, .0, -uv.y, 1.);
     gl_FragColor = vec4(0.);
 
     //
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-//        if (w.path < 0.) break;
+        if (w.path < 0.) break;
         if (w.path > MAX_PATH) {
             if (i == 0.) gl_FragColor = bg;
             break;
@@ -207,7 +228,7 @@ void main() {
 
         vec3 v = ro + rd*w.path;
         vec3 normal = getNormal(v);
-        vec3 lightPos = vec3(0., 0., -40.);
+        vec3 lightPos = vec3(0., 40., -40.);
         vec3 lightDir = lightPos - v;
         vec4 dirLight = getDirLight(v, normal, lightPos);
 
@@ -216,14 +237,14 @@ void main() {
 
         float reflectivity = (REFLECTIONS - i) / REFLECTIONS;
         vec4 color = getMaterial(w, dirLight);
-        gl_FragColor += reflectivity * w.opacity * color;
+        gl_FragColor += reflectivity * /*w.opacity **/ color;
 
         // fog
         if (i == 0.) {
             gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
         }
 
-//        break;
+        break;
 
         // reflection
         rd = normalize(reflect(rd, normal));

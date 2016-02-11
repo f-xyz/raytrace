@@ -61,15 +61,18 @@ float repeatedStuff(vec3 v) {
 }
 
 intersection world(vec3 v) {
-
-//    vec3 vRotated = v;
-//    float s = sin(time/2.);
-//    float c = cos(time/2.);
-//    vBox *= mat3(
-//        s,  c,  0,
-//        c, -s,  0,
-//        0,  0,  1
-//    );
+    vec3 vRotated = v;
+    float s = sin(time/2.);
+    float c = cos(time/2.);
+    vRotated *= mat3(
+        s,  c,  0,
+        c, -s,  0,
+        0,  0,  1
+    )/* * mat3(
+        s,  0,  c,
+        0,  1,  0,
+        c,  0, -s
+    )*/;
 
     intersection sphere1;
     sphere1.path = sphere(v + vec3(0., 0., 10.), 7.);
@@ -81,17 +84,22 @@ intersection world(vec3 v) {
     sphere2.material = 2.;
     sphere2.reflectivity = 1.;
 
+    intersection light;
+    light.path = sphere(v + vec3(0., -21., 0.), .5);
+    light.material = 3.;
+    light.reflectivity = 1.;
+
     intersection plane1;
     plane1.path = v.y + 20.;
     plane1.material = 1.;
     plane1.reflectivity = 1.;
 
     intersection box;
-    box.path = signedBox(v + vec3(15., 0., 0.), vec3(4.));
+    box.path = signedBox(vRotated + vec3(15., 0., 0.), vec3(4.));
     box.material = 2.;
     box.reflectivity = 1.;
 
-    return join(sphere1, join(sphere2, join(plane1, box)));
+    return join(sphere1, join(light, join(sphere2, join(plane1, box))));
 }
 
 intersection trace(vec3 ro, vec3 rd, float offset) {
@@ -164,6 +172,10 @@ vec4 getMaterial(intersection w, vec4 light) {
 
         color = light * vec4(.3);
 
+    } else if (w.material == 3.) {
+
+        color = vec4(1.);
+
     }
 
     return color;
@@ -200,7 +212,10 @@ void main() {
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-        if (w.path < 0.) break;
+        if (w.path < 0.) {
+            gl_FragColor = vec4(1., 0., 0., 1.);
+            break;
+        }
         if (w.path > MAX_PATH) break;
 
         vec3 v = ro + rd*w.path;
