@@ -94,14 +94,12 @@ intersection world(vec3 v) {
     //
     intersection stuff;
     stuff.path = max(
-        signedBox(vRotated + vec3(0., 0., 0.), vec3(4.)),
-       -cross(vRotated + vec3(0., 0., 10.), 3.0)
+        signedBox(vRotated, vec3(4.)),
+       -cross(vRotated, 3.0)
     );
     stuff.material = 0.;
     stuff.reflectivity = 1.;
     stuff.opacity = 1.3;
-
-    return stuff;
 
     // waves
 //    vec3 vWave = v;
@@ -116,7 +114,7 @@ intersection world(vec3 v) {
 
     // ground
     intersection plane;
-    plane.path = v.y + 20.;
+    plane.path = v.y + 10.;
     plane.material = 2.;
     plane.reflectivity = 1.;
     plane.opacity = 1.;
@@ -165,7 +163,7 @@ vec4 getMaterial(intersection w, vec4 light) {
 
     if (w.material == 0.) {
 
-        color = light * vec4(.4, .6, .1, 1.);
+        color = light * vec4(.8);
 
     } else if (w.material == 1.) {
 
@@ -197,13 +195,13 @@ void main() {
     float eyeDist = 10.0;
 
     vec3 up     = vec3(0.0, 1.0, 0.0);
-    vec3 eye    = vec3(0.0, 0.0, eyeDist);
+    vec3 eye    = vec3(0.0, 10.0, 10.0);
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    eye.x = eyeDist*(sin(pi*(mouse.x/2.+.5)));
-    eye.z = eyeDist*(cos(pi*(mouse.x/2.+.5)));
-    eye.y = 2. + 10.*mouse.y;
+//    eye.x = eyeDist*(sin(pi*(mouse.x/2.+.5)));
+//    eye.z = eyeDist*(cos(pi*(mouse.x/2.+.5)));
+//    eye.y = 2. + 10.*mouse.y;
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -213,7 +211,8 @@ void main() {
     vec3 rd = normalize(ro - eye); // ray direction
 
     // clear
-    vec4 bg = vec4(.0, .0, -uv.y, 1.);
+//    vec4 bg = vec4(.0, .0, -uv.y, 1.);
+    vec4 bg = vec4(.0, .0, 1., 1.);
     gl_FragColor = vec4(0.);
 
     //
@@ -222,13 +221,13 @@ void main() {
 
         if (w.path < 0.) break;
         if (w.path > MAX_PATH) {
-            if (i == 0.) gl_FragColor = bg;
+//            if (i == 0.) gl_FragColor = vec4(1., 0., 0., 1.);
             break;
         };
 
         vec3 v = ro + rd*w.path;
         vec3 normal = getNormal(v);
-        vec3 lightPos = vec3(0., 40., -40.);
+        vec3 lightPos = vec3(0., 10., 0.);
         vec3 lightDir = lightPos - v;
         vec4 dirLight = getDirLight(v, normal, lightPos);
 
@@ -237,14 +236,14 @@ void main() {
 
         float reflectivity = (REFLECTIONS - i) / REFLECTIONS;
         vec4 color = getMaterial(w, dirLight);
-        gl_FragColor += reflectivity * /*w.opacity **/ color;
+        gl_FragColor += /*reflectivity **/ /*w.opacity **/ color;
 
         // fog
         if (i == 0.) {
             gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
         }
 
-        break;
+//        break;
 
         // reflection
         rd = normalize(reflect(rd, normal));

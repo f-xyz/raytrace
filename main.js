@@ -10,7 +10,7 @@ define(function(require, exports, module) {
     document.body.appendChild(stats.domElement);
 
     var size = new gl.Vector2(innerWidth, innerHeight)
-        .divideScalar(routing.hd ? .5 : 2);
+        .divideScalar(routing.hd ? 1 : 2);
     var config = new gl.Vector3(1000, 0, 0);
     var isRunning = false;
     var time = 0;
@@ -38,7 +38,10 @@ define(function(require, exports, module) {
 
     var box = new gl.Mesh(new gl.BoxGeometry(1, size.y/size.x, 1), shader);
     scene.add(box);
+
+    console.time('render');
     renderer.render(scene, camera);
+    console.timeEnd('render');
 
     var selectShader = document.getElementById('select-shader');
     selectShader.value = routing.shader || 'upstream';
