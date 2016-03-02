@@ -1,7 +1,7 @@
 #define pi           3.14159265
-#define MAX_STEPS    400.0
+#define MAX_STEPS    40.0
 #define MAX_PATH     100.0
-#define MIN_PATH     1e-3
+#define MIN_PATH     1e-2
 #define REFLECTIONS  3.0
 
 uniform float time;
@@ -76,6 +76,7 @@ intersection smoothJoin(intersection a, intersection b, float k) { // k = 0.1 is
 }
 
 intersection world(vec3 v) {
+
     vec3 vRotated = v;
     float s = sin(time/10.);
     float c = cos(time/10.);
@@ -93,24 +94,25 @@ intersection world(vec3 v) {
 
     //
     intersection stuff;
-    stuff.path = /*max(
+    stuff.path = max(
         signedBox(vRotated, vec3(4.)),
        -cross(vRotated, 3.0)
-    )*/sphere(v, 4.);
-    stuff.material = 0.;
+    )/*sphere(v, 10.)*/;
+//    stuff.path = signedBox(vRotated, vec3(4.));
+    stuff.material = 2.;
     stuff.reflectivity = 1.;
-    stuff.opacity = 1.3;
+    stuff.opacity = .5;
 
     // waves
 //    vec3 vWave = v;
 //    vWave.y += .3*sin(v.x+time);
 
-    float mtime = time/4.;
-    vec3 wv = v;
-    wv.y +=
-        .4*sin(1.*wv.z - 5.*mtime)
+//    float mtime = time/4.;
+//    vec3 wv = v;
+//    wv.y +=
+//        .4*sin(1.*wv.z - 5.*mtime)
 //      + .2*sin(wv.x)/* * fnoise(mtime*wv.yx/100.)*/
-    ;
+//    ;
 
     // ground
     intersection plane;
@@ -154,18 +156,19 @@ vec4 getDirLight(vec3 v, vec3 normal, vec3 pos) {
         return vec4(0.);
     }
     return vec4(1.) * max(0., dot(normal, normalize(lightDir)))
-//      / dot(lightDir, lightDir) // pointLight ~ 1/r^2
+//      / dot(lightDir, lightDir) // point light ~ 1/r^2
     ;
 }
 
-vec4 getMaterial(intersection w, vec4 light) {
+vec4 getShading(intersection w, vec4 light) {
     vec4 color = vec4(1.);
 
     if (w.material == 0.) {
 
-        color = light * vec4(.8);
+        color = vec4(0.);
+//        color = light * vec4(.8);
 
-    } else if (w.material == 1.) {
+    } else if (w.material == 1.) { // ground
 
         if (light == vec4(0.)) {
             light = vec4(.2);
@@ -173,12 +176,12 @@ vec4 getMaterial(intersection w, vec4 light) {
 
         if (fract(w.voxel.x) < 0.2
         ||  fract(w.voxel.z) < 0.2) {
-            color = light * vec4(.4, .6, .8, 1.);
+            color = light * vec4(.4);
         } else {
             color = light * vec4(.2);
         }
 
-    } else if (w.material == 2.) {
+    } else if (w.material == 2.) { // stuff
 
         if (light == vec4(0.)) {
             light = vec4(.2);
@@ -203,9 +206,9 @@ void main() {
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    eye.x = eyeDist*(cos(time*0.3 + 1.) + sin(pi*(mouse.x/2.+.5)));
-    eye.z = eyeDist*(sin(time*0.1 + 2.) + cos(pi*(mouse.x/2.+.5)));
-    eye.y = eyeDist*(cos(time/10. + 1.) - mouse.y);
+    eye.x = eyeDist*(cos(time*0.3 + 0.) + sin(pi*(mouse.x/2.+.5)));
+    eye.z = eyeDist*(sin(time*0.3 + 0.) + cos(pi*(mouse.x/2.+.5)));
+    eye.y = eyeDist*(cos(time/10. + 0.) - mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -223,8 +226,8 @@ void main() {
         intersection w = trace(ro, rd, 0.);
 
         if (w.path < 0.) {
-            if (i == 0.) gl_FragColor = vec4(1., 0., 0., 1.);
-            break;
+//            if (i == 0.) gl_FragColor = vec4(1., 0., 0., 1.);
+//            break;
         }
 
         if (w.path > MAX_PATH) {
@@ -242,21 +245,25 @@ void main() {
 //        vec4 ambientLight = vec4(0.6 - ambientOcclusion);
 
         float reflectivity = (REFLECTIONS - i) / REFLECTIONS;
-        vec4 color = getMaterial(w, dirLight);
-        gl_FragColor += reflectivity * /*w.opacity **/ color;
+        vec4 color = getShading(w, dirLight);
+        gl_FragColor += reflectivity * w.opacity * color;
 
         // fog
         if (i == 0.) {
             gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
         }
 
-        break;
-
         // reflection
 //        rd = normalize(reflect(rd, normal));
 //        ro = v + 2.*rd*MIN_PATH;
 
-        rd = normalize(refract(rd, normal, .5));
-//        ro = o - uv.x*x*ratio + uv.y*y;
+//        continue;
+
+        if (i == 0. && w.opacity < 1.) {
+//            gl_FragColor += .2*vec4(1.);
+//            rd = normalize(refract(rd, normal, 1.));
+            ro = v + 5.*rd;
+//            break;
+        } else break;
     }
 }
