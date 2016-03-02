@@ -1,7 +1,7 @@
 #define pi           3.14159265
-#define MAX_STEPS    40.0
+#define MAX_STEPS    400.0
 #define MAX_PATH     100.0
-#define MIN_PATH     1e-2
+#define MIN_PATH     1e-3
 #define REFLECTIONS  3.0
 
 uniform float time;
@@ -99,6 +99,7 @@ intersection world(vec3 v) {
        -cross(vRotated, 3.0)
     )/*sphere(v, 10.)*/;
 //    stuff.path = signedBox(vRotated, vec3(4.));
+    stuff.path = sphere(v, 4.);
     stuff.material = 2.;
     stuff.reflectivity = 1.;
     stuff.opacity = .5;
@@ -152,12 +153,13 @@ vec3 getNormal(vec3 v) {
 
 vec4 getDirLight(vec3 v, vec3 normal, vec3 pos) {
     vec3 lightDir = pos - v;
-    if (trace(v, normalize(lightDir), 0.1).path < length(lightDir)) {
+    intersection shadow = trace(v, normalize(lightDir), 0.1);
+    if (shadow.path < length(lightDir)) {
         return vec4(0.);
     }
-    return vec4(1.) * max(0., dot(normal, normalize(lightDir)))
+    return vec4(max(0., dot(normal, normalize(lightDir)))
 //      / dot(lightDir, lightDir) // point light ~ 1/r^2
-    ;
+    );
 }
 
 vec4 getShading(intersection w, vec4 light) {
@@ -183,9 +185,9 @@ vec4 getShading(intersection w, vec4 light) {
 
     } else if (w.material == 2.) { // stuff
 
-        if (light == vec4(0.)) {
-            light = vec4(.2);
-        }
+//        if (light == vec4(0.)) {
+//            light = vec4(.2);
+//        }
 
         color = light * vec4(.0, .5, .7, 1.);
 
@@ -206,9 +208,9 @@ void main() {
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    eye.x = eyeDist*(cos(time*0.3 + 0.) + sin(pi*(mouse.x/2.+.5)));
-    eye.z = eyeDist*(sin(time*0.3 + 0.) + cos(pi*(mouse.x/2.+.5)));
-    eye.y = eyeDist*(cos(time/10. + 0.) - mouse.y);
+    eye.x = eyeDist*(cos(time*0.3 + 0.) + 0.*sin(pi*(mouse.x/2.+.5)));
+    eye.z = eyeDist*(sin(time*0.3 + 0.) + 0.*cos(pi*(mouse.x/2.+.5)));
+//    eye.y = eyeDist*(cos(time/10. + 0.) - mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -259,11 +261,15 @@ void main() {
 
 //        continue;
 
-        if (i == 0. && w.opacity < 1.) {
-//            gl_FragColor += .2*vec4(1.);
-//            rd = normalize(refract(rd, normal, 1.));
-            ro = v + 5.*rd;
+        if (w.opacity < 1.) {
+            // refraction
+            rd = normalize(refract(rd, normal, .95));
+            ro = v + 8.*rd;
 //            break;
-        } else break;
+        } else {
+            // reflection
+            rd = normalize(reflect(rd, normal));
+            ro = v + 2.5*rd*MIN_PATH;
+        };
     }
 }
