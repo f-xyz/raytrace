@@ -14,6 +14,7 @@ struct intersection {
     float reflectivity;
     float opacity;
     vec3 voxel;
+    vec3 normal;
 };
 
 float sphere(vec3 v, float r) {
@@ -153,7 +154,7 @@ vec3 getNormal(vec3 v) {
 
 vec4 getDirLight(vec3 v, vec3 normal, vec3 pos) {
     vec3 lightDir = pos - v;
-    intersection shadow = trace(v, normalize(lightDir), 0.1);
+    intersection shadow = trace(v, normalize(lightDir), 2.5*MIN_PATH);
     if (shadow.path < length(lightDir)) {
         return vec4(0.);
     }
@@ -162,7 +163,7 @@ vec4 getDirLight(vec3 v, vec3 normal, vec3 pos) {
     );
 }
 
-vec4 getShading(intersection w, vec4 light) {
+vec4 getShading(intersection w, vec4 light, vec3 lightDir) {
     vec4 color = vec4(1.);
 
     if (w.material == 0.) {
@@ -173,7 +174,14 @@ vec4 getShading(intersection w, vec4 light) {
     } else if (w.material == 1.) { // ground
 
         if (light == vec4(0.)) {
-            light = vec4(.2);
+
+            intersection q = trace(w.voxel, normalize(lightDir - w.voxel), .1);
+            vec3 normal = getNormal(q.voxel);
+            if (q.path < length(lightDir - w.voxel)) {
+                light = vec4(pow(dot(normal, normalize(w.voxel- lightDir)), 4.));
+            } else {
+                light = vec4(1., 1., 1., 1.);
+            }
         }
 
         if (fract(w.voxel.x) < 0.2
@@ -210,7 +218,7 @@ void main() {
     // camera path
     eye.x = eyeDist*(cos(time*0.3 + 0.) + 0.*sin(pi*(mouse.x/2.+.5)));
     eye.z = eyeDist*(sin(time*0.3 + 0.) + 0.*cos(pi*(mouse.x/2.+.5)));
-//    eye.y = eyeDist*(cos(time/10. + 0.) - mouse.y);
+    eye.y = eyeDist*(cos(time*0.3 + 0.) - mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -238,16 +246,16 @@ void main() {
         }
 
         vec3 v = ro + rd*w.path;
-        vec3 normal = getNormal(v);
+        vec3 normal = w.normal = getNormal(v);
         vec3 lightPos = vec3(0., 20., 20.);
         vec3 lightDir = lightPos - v;
-        vec4 dirLight = getDirLight(v, normal, lightPos);
+        vec4 lightColor = getDirLight(v, normal, lightPos);
 
 //        float ambientOcclusion = getAmbientOcclusion(v, normal);
 //        vec4 ambientLight = vec4(0.6 - ambientOcclusion);
 
         float reflectivity = (REFLECTIONS - i) / REFLECTIONS;
-        vec4 color = getShading(w, dirLight);
+        vec4 color = getShading(w, lightColor, lightDir);
         gl_FragColor += reflectivity * w.opacity * color;
 
         // fog
