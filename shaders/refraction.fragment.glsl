@@ -78,27 +78,25 @@ intersection smoothJoin(intersection a, intersection b, float k) { // k = 0.1 is
 
 intersection world(vec3 v) {
 
-    vec3 vRotated = v;
-    float s = sin(time/10.);
-    float c = cos(time/10.);
-    vRotated *= mat3(
-        s,  c,  0,
-        c, -s,  0,
-        0,  0,  1
-    ) * mat3(
-        s,  0,  c,
-        0,  1,  0,
-        c,  0, -s
-    );
-
-    // sphere(v + vec3(0., 0., 10.), 4.)
+//    vec3 vRotated = v;
+//    float s = sin(time/10.);
+//    float c = cos(time/10.);
+//    vRotated *= mat3(
+//        s,  c,  0,
+//        c, -s,  0,
+//        0,  0,  1
+//    ) * mat3(
+//        s,  0,  c,
+//        0,  1,  0,
+//        c,  0, -s
+//    );
 
     //
     intersection stuff;
-    stuff.path = max(
-        signedBox(vRotated, vec3(4.)),
-       -cross(vRotated, 3.0)
-    )/*sphere(v, 10.)*/;
+//    stuff.path = max(
+//        signedBox(vRotated, vec3(4.)),
+//       -cross(vRotated, 3.0)
+//    )/*sphere(v, 10.)*/;
 //    stuff.path = signedBox(vRotated, vec3(4.));
     stuff.path = sphere(v, 4.);
     stuff.material = 2.;
@@ -216,9 +214,9 @@ void main() {
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    eye.x = eyeDist*(cos(time*0.3 + 0.) + 0.*sin(pi*(mouse.x/2.+.5)));
-    eye.z = eyeDist*(sin(time*0.3 + 0.) + 0.*cos(pi*(mouse.x/2.+.5)));
-    eye.y = eyeDist*(cos(time*0.3 + 0.) - mouse.y);
+    eye.x = eyeDist*(cos(time*0.3 /*+ 0.*/) /*+ sin(pi*(mouse.x/2.+.5))*/);
+    eye.z = eyeDist*(sin(time*0.3 /*+ 0.*/) /*+ cos(pi*(mouse.x/2.+.5))*/);
+    eye.y = eyeDist*(cos(time*0.3 /*+ 0.*/) - mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -235,10 +233,10 @@ void main() {
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-        if (w.path < 0.) {
+//        if (w.path < 0.) {
 //            if (i == 0.) gl_FragColor = vec4(1., 0., 0., 1.);
 //            break;
-        }
+//        }
 
         if (w.path > MAX_PATH) {
             if (i == 0.) gl_FragColor = bg;
