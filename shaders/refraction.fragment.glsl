@@ -1,8 +1,8 @@
 #define pi           3.14159265
-#define MAX_STEPS    400.0
+#define MAX_STEPS    40.0
 #define MAX_PATH     100.0
-#define MIN_PATH     1e-3
-#define REFLECTIONS  3.0
+#define MIN_PATH     1e-2
+#define REFLECTIONS  2.0
 
 uniform float time;
 uniform vec2 resolution;
@@ -178,7 +178,7 @@ vec4 getShading(intersection w, vec4 light, vec3 lightDir) {
             intersection q = trace(w.voxel, normalize(lightDir - w.voxel), .1);
             vec3 normal = getNormal(q.voxel);
             if (q.path < length(lightDir - w.voxel)) {
-                light = vec4(pow(dot(normal, normalize(w.voxel- lightDir)), 4.));
+                light = vec4(pow(dot(normal, normalize(w.voxel- lightDir)), 8.));
             } else {
                 light = vec4(1., 1., 1., 1.);
             }
@@ -251,9 +251,6 @@ void main() {
         vec3 lightDir = lightPos - v;
         vec4 lightColor = getDirLight(v, normal, lightPos);
 
-//        float ambientOcclusion = getAmbientOcclusion(v, normal);
-//        vec4 ambientLight = vec4(0.6 - ambientOcclusion);
-
         float reflectivity = (REFLECTIONS - i) / REFLECTIONS;
         vec4 color = getShading(w, lightColor, lightDir);
         gl_FragColor += reflectivity * w.opacity * color;
@@ -263,16 +260,10 @@ void main() {
             gl_FragColor = mix(gl_FragColor, bg, smoothstep(0., MAX_PATH, w.path));
         }
 
-        // reflection
-//        rd = normalize(reflect(rd, normal));
-//        ro = v + 2.*rd*MIN_PATH;
-
-//        continue;
-
         if (w.opacity < 1.) {
             // refraction
             rd = normalize(refract(rd, normal, .95));
-            ro = v + 8.*rd;
+            ro = v + 8.1*rd;
 //            break;
         } else {
             // reflection
@@ -280,4 +271,7 @@ void main() {
             ro = v + 2.5*rd*MIN_PATH;
         };
     }
+
+    // levels
+    gl_FragColor = 2.*gl_FragColor;
 }
