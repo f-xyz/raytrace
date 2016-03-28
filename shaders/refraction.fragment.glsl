@@ -91,37 +91,38 @@ intersection world(vec3 v) {
 //        c,  0, -s
 //    );
 
+    // waves
+    vec3 vWave = v;
+    vWave.y += 1.0*sin(v.x+time);
+
+    float mtime = time/4.;
+    vec3 wv = v;
+    wv.y +=
+        .4*sin(1.*wv.z - 5.*mtime)
+      + .2*sin(wv.x)/* * fnoise(mtime*wv.yx/100.)*/
+    ;
+
     //
     intersection stuff;
-//    stuff.path = max(
-//        signedBox(vRotated, vec3(4.)),
-//       -cross(vRotated, 3.0)
-//    )/*sphere(v, 10.)*/;
-//    stuff.path = signedBox(vRotated, vec3(4.));
-    stuff.path = sphere(v, 4.);
+    stuff.path = sphere(wv, 4.);
     stuff.material = 2.;
     stuff.reflectivity = 1.;
     stuff.opacity = .5;
 
-    // waves
-//    vec3 vWave = v;
-//    vWave.y += .3*sin(v.x+time);
+    intersection cube;
+    cube.path = signedBox(vWave, vec3(4.));
+    cube.material = 2.;
+    cube.reflectivity = 1.;
+    cube.opacity = .5;
 
-//    float mtime = time/4.;
-//    vec3 wv = v;
-//    wv.y +=
-//        .4*sin(1.*wv.z - 5.*mtime)
-//      + .2*sin(wv.x)/* * fnoise(mtime*wv.yx/100.)*/
-//    ;
+    intersection ground;
+    ground.path = v.y + 10.;
+    ground.material = 1.;
+    ground.reflectivity = 1.;
+    ground.opacity = 1.;
 
-    // ground
-    intersection plane;
-    plane.path = v.y + 10.;
-    plane.material = 1.;
-    plane.reflectivity = 1.;
-    plane.opacity = 1.;
-
-    return join(stuff, plane);
+//    return join(join(stuff, ground), cube);
+    return join(stuff, ground);
 }
 
 intersection trace(vec3 ro, vec3 rd, float offset) {
@@ -214,9 +215,13 @@ void main() {
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    eye.x = eyeDist*(cos(time*0.3 /*+ 0.*/) + sin(pi*(mouse.x/2.+.5)));
-    eye.z = eyeDist*(sin(time*0.3 /*+ 0.*/) + cos(pi*(mouse.x/2.+.5)));
-    eye.y = eyeDist/2. + .5*eyeDist*(cos(time*0.3 /*+ 0.*/) - 2.*mouse.y);
+    eye.x = eyeDist*(cos(time*.3) + sin(pi*(mouse.x/2.+.5)));
+    eye.z = eyeDist*(sin(time*.3) + cos(pi*(mouse.x/2.+.5)));
+//    eye.y = eyeDist + .5*eyeDist*(cos(time*0.3 /*+ 0.*/) - 2.*mouse.y);
+
+//    eye.x = eyeDist*(cos(time*.3));
+//    eye.z = eyeDist*(sin(time*.3));
+//    eye.y = eyeDist + .5*eyeDist*(cos(time*0.3 /*+ 0.*/) - 2.*mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -233,7 +238,7 @@ void main() {
     for (float i = 0.; i < REFLECTIONS; ++i) {
         intersection w = trace(ro, rd, 0.);
 
-//        if (w.path < 0.) {
+//        if (w.path < 0.) { // inside object
 //            if (i == 0.) gl_FragColor = vec4(1., 0., 0., 1.);
 //            break;
 //        }
@@ -261,7 +266,7 @@ void main() {
         if (w.opacity < 1.) {
             // refraction
             rd = normalize(refract(rd, normal, .95));
-            ro = v + 8.1*rd;
+            ro = v + 10.*rd;
 //            break;
         } else {
             // reflection

@@ -1,6 +1,8 @@
 define(function(require, exports, module) {
     'use strict';
 
+    // todo: show fps meter and shader selector if #debug param is true only
+
     var gl = require('three');
     var Stats = require('stats');
     var routing = require('./routing');
