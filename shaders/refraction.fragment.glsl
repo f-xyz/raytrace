@@ -214,9 +214,9 @@ void main() {
     vec3 lookAt = vec3(0.0, 0.0, 0.0);
 
     // camera path
-    eye.x = eyeDist*(cos(time*0.3 /*+ 0.*/) /*+ sin(pi*(mouse.x/2.+.5))*/);
-    eye.z = eyeDist*(sin(time*0.3 /*+ 0.*/) /*+ cos(pi*(mouse.x/2.+.5))*/);
-    eye.y = eyeDist*(cos(time*0.3 /*+ 0.*/) - mouse.y);
+    eye.x = eyeDist*(cos(time*0.3 /*+ 0.*/) + sin(pi*(mouse.x/2.+.5)));
+    eye.z = eyeDist*(sin(time*0.3 /*+ 0.*/) + cos(pi*(mouse.x/2.+.5)));
+    eye.y = eyeDist/2. + .5*eyeDist*(cos(time*0.3 /*+ 0.*/) - 2.*mouse.y);
 
     vec3 forward = normalize(lookAt - eye);
     vec3 x = normalize(cross(up, forward));
@@ -225,7 +225,7 @@ void main() {
     vec3 ro = o + uv.x*x*ratio + uv.y*y; // ray origin
     vec3 rd = normalize(ro - eye); // ray direction
 
-    // clear
+    // clear background
     vec4 bg = vec4(.0, .0, .1, 1.);
     gl_FragColor = bg;
 
